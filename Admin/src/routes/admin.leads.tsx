@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye
 
-// Database ke hisaab se interface
 export interface DBLead {
   id: string;
   name: string;
@@ -34,11 +34,18 @@ function LeadsPage() {
   const [filter, setFilter] = useState<string>("all");
   const [view, setView] = useState<DBLead | null>(null);
   const [dbLeads, setDbLeads] = useState<DBLead[]>([]);
+  
+  const { token } = useAuth(); // NAYA: Store se token nikala
 
   // FETCH LEADS FROM DATABASE
   const fetchLeads = async () => {
+    if (!token) return; // Agar token nahi hai toh API call mat karo
     try {
-      const res = await fetch('http://localhost:5000/api/leads');
+      const res = await fetch('http://localhost:5000/api/leads', {
+        headers: {
+          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+        }
+      });
       const data = await res.json();
       if (data.success) {
         setDbLeads(data.data);
@@ -50,9 +57,8 @@ function LeadsPage() {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [token]); // Token aate hi fetch karega
 
-  // FILTER LOGIC
   const filtered = dbLeads.filter(l => {
     const m = !query || [l.name, l.email, l.phone, l.service].some(x => x?.toLowerCase().includes(query.toLowerCase()));
     const f = filter === "all" || l.status === filter;
@@ -61,16 +67,20 @@ function LeadsPage() {
 
   // UPDATE STATUS LOGIC
   const updateStatus = async (id: string, newStatus: string) => {
+    if (!token) return;
     try {
       const response = await fetch(`http://localhost:5000/api/leads/${id}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+        },
         body: JSON.stringify({ status: newStatus })
       });
       const data = await response.json();
       
       if (data.success) {
-        fetchLeads(); // Refresh list
+        fetchLeads(); 
       } else {
         toast.error("Error: " + data.message);
       }
@@ -81,13 +91,18 @@ function LeadsPage() {
 
   // DELETE LEAD LOGIC
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this lead?")) return;
+    if (!token || !confirm("Delete this lead?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/leads/${id}`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:5000/api/leads/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+        }
+      });
       const data = await response.json();
       if (data.success) {
         toast.success("Deleted");
-        fetchLeads(); // Refresh list
+        fetchLeads(); 
       } else {
         toast.error("Error: " + data.message);
       }
@@ -162,7 +177,7 @@ function LeadsPage() {
                   <TableCell>{l.email}</TableCell>
                   <TableCell>{l.phone}</TableCell>
                   <TableCell>{l.service}</TableCell>
-                  <TableCell>{format(new Date(l.createdAt), "MMM d, yyyy")}</TableCell>
+                  <TableCell>{l.createdAt ? format(new Date(l.createdAt), "MMM d, yyyy") : "N/A"}</TableCell>
                   <TableCell>
                     <Badge className={l.status === "new" ? "bg-brand-accent text-white" : l.status === "replied" ? "bg-emerald-600 text-white" : ""}>
                       {l.status}
@@ -192,7 +207,7 @@ function LeadsPage() {
               <p><span className="text-muted-foreground">Email:</span> {view.email}</p>
               <p><span className="text-muted-foreground">Phone:</span> {view.phone}</p>
               <p><span className="text-muted-foreground">Service:</span> {view.service}</p>
-              <p><span className="text-muted-foreground">Date:</span> {format(new Date(view.createdAt), "PPP p")}</p>
+              <p><span className="text-muted-foreground">Date:</span> {view.createdAt ? format(new Date(view.createdAt), "PPP p") : "N/A"}</p>
               <div className="pt-2">
                 <p className="text-muted-foreground mb-1">Message:</p>
                 <p className="p-3 bg-muted rounded-lg whitespace-pre-wrap">{view.message}</p>

@@ -14,6 +14,7 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { ListEditor } from "./admin.services";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-store"; // Token yahan se direct nikalenge
 
 export const Route = createFileRoute("/admin/blog")({
   head: () => ({ meta: [{ title: "Blog — Poppinion Admin" }] }),
@@ -31,11 +32,19 @@ function BlogPage() {
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [preview, setPreview] = useState<BlogPost | null>(null);
   const [dbBlogs, setDbBlogs] = useState<BlogPost[]>([]);
+  
+  // Naya: Store se token direct nikala taaki hamesha fresh rahe
+  const { token } = useAuth(); 
 
-  // FETCH DATA FROM DATABASE
   const fetchBlogs = async () => {
+    if (!token) return; // Agar token nahi hai toh api call mat karo
+
     try {
-      const res = await fetch('http://localhost:5000/api/blogs');
+      const res = await fetch('http://localhost:5000/api/blogs', {
+        headers: {
+          'Authorization': `Bearer ${token}` // Backend ko token diya
+        }
+      });
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -51,10 +60,10 @@ function BlogPage() {
 
   useEffect(() => {
     fetchBlogs();
-  }, []);
+  }, [token]); // Jab bhi token aaye, data le aao
 
-  // SAVE OR UPDATE BLOG IN DATABASE
   const handleSaveToDatabase = async (blogData: BlogPost, isDraft: boolean) => {
+    if (!token) return;
     try {
       const isExisting = dbBlogs.some(b => b.id === blogData.id);
       const url = isExisting ? `http://localhost:5000/api/blogs/${blogData.id}` : 'http://localhost:5000/api/blogs';
@@ -64,7 +73,10 @@ function BlogPage() {
 
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({
           title: blogData.title,
           slug: blogData.slug,
@@ -93,11 +105,15 @@ function BlogPage() {
     }
   };
 
-  // DELETE BLOG FUNCTION
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this blog post?")) return;
+    if (!token || !confirm("Are you sure you want to delete this blog post?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/blogs/${id}`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:5000/api/blogs/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       if (data.success) {
         toast.success("Blog delete ho gaya! 🗑️");
@@ -111,7 +127,6 @@ function BlogPage() {
     }
   };
 
-  // DUPLICATE BLOG FUNCTION
   const handleDuplicate = async (b: BlogPost) => {
     const randomString = Math.random().toString(36).substring(2, 7);
     const duplicatedBlog = {
@@ -125,7 +140,6 @@ function BlogPage() {
     await handleSaveToDatabase(duplicatedBlog, true);
   };
 
-  // QUICK TOGGLE PUBLISH/UNPUBLISH
   const togglePublishStatus = async (b: BlogPost) => {
     const newStatus = b.status === "published" ? "draft" : "published";
     await handleSaveToDatabase({ ...b, status: newStatus }, false);

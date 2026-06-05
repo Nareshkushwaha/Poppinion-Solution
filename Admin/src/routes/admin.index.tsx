@@ -11,41 +11,62 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function Dashboard() {
-  // 1. Naye States Real Data ke liye
   const [counts, setCounts] = useState({ services: 0, projects: 0, blogs: 0, jobs: 0, leads: 0 });
   const [recentLeads, setRecentLeads] = useState<any[]>([]);
   const [recentProjects, setRecentProjects] = useState<any[]>([]);
 
-  // 2. Data Fetch Karne ka function (Saari APIs ek sath call karenge fast load ke liye)
   const fetchDashboardData = async () => {
     try {
-      const [resServices, resPortfolio, resBlogs, resCareers, resLeads] = await Promise.all([
-        fetch('http://localhost:5000/api/services').then(res => res.json()),
-        fetch('http://localhost:5000/api/portfolio').then(res => res.json()),
-        fetch('http://localhost:5000/api/blogs').then(res => res.json()),
-        fetch('http://localhost:5000/api/careers').then(res => res.json()),
-        fetch('http://localhost:5000/api/leads').then(res => res.json())
+      // 1. Local storage se token nikalo (Chaabi)
+      const token = localStorage.getItem("token"); 
+      
+      const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      };
+
+      // 2. SMART FETCH FUNCTION: Agar ek API fail ho, toh baki crash na ho
+      const safeFetch = async (url: string, name: string) => {
+        try {
+          const res = await fetch(url, { headers });
+          const data = await res.json();
+          if (!data.success) {
+            console.error(`❌ Backend Error in ${name}:`, data.message);
+            return [];
+          }
+          return data.data || [];
+        } catch (error) {
+          console.error(`⚠️ Network Error in ${name}:`, error);
+          return [];
+        }
+      };
+
+      // 3. Sabko alag-alag safely fetch karo
+      const [servicesData, portfolioData, blogsData, careersData, leadsData] = await Promise.all([
+        safeFetch('http://localhost:5000/api/services', 'Services'),
+        safeFetch('http://localhost:5000/api/portfolio', 'Portfolio'),
+        safeFetch('http://localhost:5000/api/blogs', 'Blogs'),
+        safeFetch('http://localhost:5000/api/careers', 'Careers'),
+        safeFetch('http://localhost:5000/api/leads', 'Leads')
       ]);
 
-      // Counts update karo (Length nikal kar)
+      // 4. Data set karo (Jo API chalegi, uska data dikhega)
       setCounts({
-        services: resServices.data?.length || 0,
-        projects: resPortfolio.data?.length || 0,
-        blogs: resBlogs.data?.length || 0,
-        jobs: resCareers.data?.length || 0,
-        leads: resLeads.data?.length || 0,
+        services: servicesData.length,
+        projects: portfolioData.length,
+        blogs: blogsData.length,
+        jobs: careersData.length,
+        leads: leadsData.length,
       });
 
-      // Recent 5 items update karo (Backend se pehle hi naye wale upar aate hain)
-      setRecentLeads(resLeads.data?.slice(0, 5) || []);
-      setRecentProjects(resPortfolio.data?.slice(0, 5) || []);
+      setRecentLeads(leadsData.slice(0, 5));
+      setRecentProjects(portfolioData.slice(0, 5));
       
     } catch (error) {
-      console.error("Dashboard data fetch error:", error);
+      console.error("Dashboard general error:", error);
     }
   };
 
-  // Jab page load ho tab data lao
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -53,7 +74,7 @@ function Dashboard() {
   const stats = [
     { label: "Total Services", value: counts.services, icon: Briefcase, color: "from-brand to-brand-dark", href: "/admin/services" },
     { label: "Portfolio Projects", value: counts.projects, icon: Image, color: "from-brand-accent to-orange-600", href: "/admin/portfolio" },
-    { label: "Total Blogs", value: counts.blogs, icon: FileText, color: "from-emerald-500 to-emerald-700", href: "/admin/blogs" },
+    { label: "Total Blogs", value: counts.blogs, icon: FileText, color: "from-emerald-500 to-emerald-700", href: "/admin/blog" }, 
     { label: "Total Careers", value: counts.jobs, icon: Users, color: "from-purple-500 to-purple-700", href: "/admin/careers" },
     { label: "Total Leads", value: counts.leads, icon: Inbox, color: "from-pink-500 to-pink-700", href: "/admin/leads" },
   ];

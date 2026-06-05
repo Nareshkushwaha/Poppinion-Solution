@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Save } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/config";
+import { useAuth } from "@/lib/auth-store"; // <-- Naya import
 
 export const Route = createFileRoute("/admin/profile")({
   head: () => ({ meta: [{ title: "Profile — Poppinion Admin" }] }),
@@ -16,6 +18,10 @@ export const Route = createFileRoute("/admin/profile")({
 });
 
 function ProfilePage() {
+  const { userEmail } = useAuth(); // Jo admin login hai uska email nikal liya
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  
   const [v, setV] = useState({
     name: "",
     email: "",
@@ -25,15 +31,16 @@ function ProfilePage() {
     photo: ""
   });
 
-  // FETCH PROFILE DATA FROM DATABASE
+  // 1. DATABASE SE DATA MANGWANA (Sirf isi user ka)
   const fetchProfile = async () => {
+    if (!userEmail) return;
     try {
-      const res = await fetch('http://localhost:5000/api/profile');
+      const res = await fetch(`${API_BASE_URL}/profile/${userEmail}`);
       const data = await res.json();
       if (data.success && data.data) {
         setV({
           name: data.data.name || "",
-          email: data.data.email || "",
+          email: data.data.email || userEmail,
           phone: data.data.phone || "",
           designation: data.data.designation || "",
           bio: data.data.bio || "",
@@ -42,21 +49,24 @@ function ProfilePage() {
       }
     } catch (error) {
       console.error("Fetch profile error:", error);
+    } finally {
+      setFetching(false);
     }
   };
 
-  // Run only once when the page loads
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [userEmail]);
 
-  // SAVE PROFILE TO DATABASE
+  // 2. CHANGES KO DATABASE MEIN SAVE KARNA
   const save = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/profile', {
+      const response = await fetch(`${API_BASE_URL}/profile/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(v)
+        // originalEmail bhej rahe hain taaki backend ko pata chale kiska data update karna hai
+        body: JSON.stringify({ ...v, originalEmail: userEmail }) 
       });
       const data = await response.json();
       
@@ -67,24 +77,49 @@ function ProfilePage() {
       }
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("Backend server connect nahi ho raha.");
+      toast.error("Backend server se connect nahi ho raha.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (fetching) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-brand size-8" /></div>;
 
   return (
     <div>
       <PageHeader title="Profile Settings" description="Manage your admin profile."
-        action={<Button onClick={save} className="gradient-brand text-white border-0"><Save className="size-4 mr-2" /> Save Profile</Button>}
+        action={
+          <Button onClick={save} disabled={loading} className="gradient-brand text-white border-0">
+            {loading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />} 
+            Save Profile
+          </Button>
+        }
       />
       <Card className="p-6 max-w-3xl space-y-4">
         <ImageUpload label="Profile Photo" value={v.photo} onChange={(x) => setV({ ...v, photo: x })} />
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="space-y-2"><Label>Name</Label><Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} /></div>
-          <div className="space-y-2"><Label>Email</Label><Input value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} /></div>
-          <div className="space-y-2"><Label>Phone</Label><Input value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} /></div>
-          <div className="space-y-2"><Label>Designation</Label><Input value={v.designation} onChange={(e) => setV({ ...v, designation: e.target.value })} /></div>
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            {/* Email ko disabled rakha hai taaki login ID kharab na ho */}
+            <Input value={v.email} disabled className="bg-muted cursor-not-allowed" title="Email cannot be changed" />
+          </div>
+          <div className="space-y-2">
+            <Label>Phone</Label>
+            <Input value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Designation</Label>
+            <Input value={v.designation} onChange={(e) => setV({ ...v, designation: e.target.value })} />
+          </div>
         </div>
-        <div className="space-y-2"><Label>Bio</Label><Textarea rows={4} value={v.bio} onChange={(e) => setV({ ...v, bio: e.target.value })} /></div>
+        <div className="space-y-2">
+          <Label>Bio</Label>
+          <Textarea rows={4} value={v.bio} onChange={(e) => setV({ ...v, bio: e.target.value })} />
+        </div>
       </Card>
     </div>
   );

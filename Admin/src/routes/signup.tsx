@@ -1,33 +1,85 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Lock, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-store";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Create Account — Poppinion Admin" }] }),
+  head: () => ({ meta: [{ title: "Setup Admin — Poppinion Solutions" }] }),
   component: Signup,
 });
 
 function Signup() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthed } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  const onSubmit = (e: React.FormEvent) => {
+  // Security Check: Kya pehle se admin hai?
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/check-admins`);
+        const data = await res.json();
+        
+        if (data.success && data.exists) {
+          // Agar pehle se admin hai, toh signup block karo aur login par bhejo
+          toast.info("Admin account already exists. Please login.");
+          navigate({ to: "/login", replace: true });
+        } else {
+          setChecking(false);
+        }
+      } catch (error) {
+        setChecking(false);
+      }
+    };
+
+    if (isAuthed) {
+      navigate({ to: "/admin", replace: true });
+    } else {
+      checkSetup();
+    }
+  }, [isAuthed, navigate]);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirm) {
       toast.error("Passwords do not match");
       return;
     }
-    login(form.email);
-    toast.success("Account created");
-    navigate({ to: "/admin" });
+    
+    setLoading(true);
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        toast.success("Account created successfully!");
+        login(data.token); 
+        navigate({ to: "/admin" });
+      } else {
+        toast.error(data.message || "Failed to create account");
+      }
+    } catch (error) {
+      toast.error("Server connection failed!");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (checking) return <div className="min-h-screen flex items-center justify-center bg-surface"><Loader2 className="size-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-surface">
@@ -37,8 +89,8 @@ function Signup() {
             <div className="size-9 rounded-lg gradient-brand grid place-items-center text-white font-bold">P</div>
             <span className="font-semibold">Poppinion Admin</span>
           </div>
-          <h2 className="text-2xl font-bold">Create account</h2>
-          <p className="text-sm text-muted-foreground mt-1">Join the Poppinion admin team</p>
+          <h2 className="text-2xl font-bold">First-time Setup</h2>
+          <p className="text-sm text-muted-foreground mt-1">Create the master admin account for your website</p>
 
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <div className="space-y-2">
@@ -69,14 +121,11 @@ function Signup() {
                 <Input id="confirm" type="password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} className="pl-9" />
               </div>
             </div>
-            <Button type="submit" className="w-full h-11 gradient-brand text-white border-0">
-              Create Account <ArrowRight className="size-4 ml-2" />
+            <Button type="submit" disabled={loading} className="w-full h-11 gradient-brand text-white border-0 mt-6">
+              {loading ? <Loader2 className="size-4 animate-spin" /> : <><span className="mr-2">Complete Setup</span> <ArrowRight className="size-4" /></>}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account? <Link to="/login" className="text-brand font-medium hover:underline">Sign in</Link>
-          </p>
         </motion.div>
       </div>
 
@@ -87,10 +136,10 @@ function Signup() {
         </div>
         <div>
           <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
-            Join the team behind the website.
+            Welcome to your new digital headquarters.
           </h1>
           <p className="mt-4 text-white/80 text-lg">
-            Get full access to manage content, leads, and brand assets.
+            This is a one-time setup to secure your admin panel. Ensure you use a strong password.
           </p>
         </div>
         <div className="text-sm text-white/60">© 2026 Poppinion Solutions</div>

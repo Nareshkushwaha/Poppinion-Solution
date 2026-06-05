@@ -1,11 +1,12 @@
 import express from 'express';
-import { getProjects, createProject, updateProject, deleteProject } from '../controllers/portfolioController';
+import { getProfile, saveProfile } from '../controllers/profileController';
 
 const router = express.Router();
 
-router.get('/', getProjects);
-router.post('/', createProject);
-router.put('/:id', updateProject);
-router.delete('/:id', deleteProject); // <-- Delete ka naya route
+// Route 1: Get data (e.g., GET /api/profile/admin@poppinion.com)
+router.get('/:email', getProfile);
+
+// Route 2: Update data (e.g., POST /api/profile/update)
+router.post('/update', saveProfile);
 
 export default router;

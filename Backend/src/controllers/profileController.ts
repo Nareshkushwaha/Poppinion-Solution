@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
-import pool from '../config/db';
+import { AdminModel } from '../models/AdminModel';
 
-// 1. GET PROFILE (Admin ki details laane ke liye)
 export const getProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const [rows]: any = await pool.query('SELECT * FROM profile_settings WHERE id = 1');
-    if (rows.length > 0) {
+    // Yahan 'as string' laga diya taaki TS ko confirm ho jaye
+    const email = req.params.email as string;
+
+    const rows: any[] = await AdminModel.getByEmail(email);
+
+    if (rows && rows.length > 0) {
       res.json({ success: true, data: rows[0] });
     } else {
-      res.json({ success: true, data: null });
+      res.status(404).json({ success: false, message: 'Profile nahi mila yr!' });
     }
   } catch (error) {
     console.error("Fetch profile error:", error);
@@ -16,27 +19,25 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// 2. SAVE OR UPDATE PROFILE
 export const saveProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, phone, designation, bio, photo } = req.body;
+    const { name, phone, designation, bio, photo, originalEmail } = req.body;
 
-    // Ye magic query hai: Agar id 1 nahi hai toh banayegi, agar hai toh update kar degi
-    const query = `
-      INSERT INTO profile_settings (id, name, email, phone, designation, bio, photo)
-      VALUES (1, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-      name = VALUES(name),
-      email = VALUES(email),
-      phone = VALUES(phone),
-      designation = VALUES(designation),
-      bio = VALUES(bio),
-      photo = VALUES(photo)
-    `;
+    // Yahan bhi originalEmail ko 'as string' kar diya
+    const result: any = await AdminModel.updateProfile(
+      name as string, 
+      phone as string, 
+      designation as string, 
+      bio as string, 
+      photo as string, 
+      originalEmail as string
+    );
 
-    await pool.query(query, [name, email, phone, designation, bio, photo]);
-
-    res.json({ success: true, message: 'Profile ekdum mast update ho gaya bhai! 🚀' });
+    if (result && result.affectedRows > 0) {
+      res.json({ success: true, message: 'Profile ekdum mast update ho gaya bhai! 🚀' });
+    } else {
+      res.status(404).json({ success: false, message: 'Admin email match nahi hua!' });
+    }
   } catch (error) {
     console.error("Save profile error:", error);
     res.status(500).json({ success: false, message: 'Profile save nahi hua yr!' });

@@ -15,6 +15,7 @@ import { ImageUpload, MultiImageUpload } from "@/components/admin/ImageUpload";
 import { RichTextEditor } from "@/components/admin/RichTextEditor"; 
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/config"; // Yahan se URL aayega
 
 export const Route = createFileRoute("/admin/services")({
   head: () => ({ meta: [{ title: "Services — Poppinion Admin" }] }),
@@ -36,7 +37,7 @@ function ServicesPage() {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/services');
+      const res = await fetch(`${API_BASE_URL}/services`);
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -59,14 +60,13 @@ function ServicesPage() {
 
   const filtered = dbServices.filter(s => s.title.toLowerCase().includes(query.toLowerCase()));
 
-  // DATABASE MEIN SAVE (POST) YA UPDATE (PUT) KARNE WALA FUNCTION
   const handleSaveToDatabase = async (serviceData: Service) => {
     try {
       const isExistingService = dbServices.some(s => s.id === serviceData.id);
       
       const url = isExistingService 
-        ? `http://localhost:5000/api/services/${serviceData.id}` 
-        : 'http://localhost:5000/api/services';
+        ? `${API_BASE_URL}/services/${serviceData.id}` 
+        : `${API_BASE_URL}/services`;
       
       const method = isExistingService ? 'PUT' : 'POST';
 
@@ -105,7 +105,6 @@ function ServicesPage() {
     }
   };
 
-  // DUPLICATE SERVICE FUNCTION
   const handleDuplicate = async (s: Service) => {
       const randomString = Math.random().toString(36).substring(2, 7); 
       const duplicatedService = {
@@ -120,12 +119,11 @@ function ServicesPage() {
       await handleSaveToDatabase(duplicatedService);
   };
 
-  // DELETE SERVICE FUNCTION
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this service?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/services/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/services/${id}`, {
         method: 'DELETE',
       });
       const data = await response.json();

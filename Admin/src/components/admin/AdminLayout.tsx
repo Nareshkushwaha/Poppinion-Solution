@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -23,16 +23,34 @@ const navItems = [
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const { logout, email } = useAuth();
+  // NAYA: isAuthed ko bhi bahar nikal liya store se
+  const { logout, userEmail, isAuthed } = useAuth();
+  
   const notifications = useAdminStore((s) => s.notifications || []);
   const unread = notifications.filter((n) => !n.read).length;
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // NAYA: Hydration error aur redirect fix karne ke liye state
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true); // Component load ho chuka hai
+    // NAYA: Agar login nahi hai, toh bhaga do wapas login page par
+    if (!isAuthed) {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [isAuthed, navigate]);
+
   const handleLogout = () => {
     logout();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", replace: true });
   };
+
+  // NAYA: Jab tak browser theek se check na kar le, kachra UI mat dikhao (Is se lal error hat jayega)
+  if (!isMounted || !isAuthed) {
+    return null; 
+  }
 
   const isActive = (to: string, exact?: boolean) => exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
@@ -110,10 +128,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <div className="flex-1" />
           <div className="flex items-center gap-2 pl-2 border-l">
             <div className="size-9 rounded-full gradient-brand grid place-items-center text-white text-sm font-semibold">
-              {(email || "A").charAt(0).toUpperCase()}
+              {(userEmail || "A").charAt(0).toUpperCase()}
             </div>
             <div className="hidden sm:block text-sm">
-              <p className="font-medium leading-tight">{email || "Admin"}</p>
+              <p className="font-medium leading-tight">{userEmail || "Admin"}</p>
               <p className="text-xs text-muted-foreground">Administrator</p>
             </div>
           </div>

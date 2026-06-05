@@ -8,8 +8,8 @@ import blogRoutes from './routes/blogRoutes';
 import careerRoutes from './routes/careerRoutes'; 
 import leadRoutes from './routes/leadRoutes'; 
 import profileRoutes from './routes/profileRoutes';
-import settingsRoutes from './routes/settingsRoutes'; // <-- Naya Import
-
+import settingsRoutes from './routes/settingsRoutes';
+import authRoutes from './routes/authRoutes';
 dotenv.config();
 
 const app = express();
@@ -20,13 +20,15 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Sabhi Routes
 app.use('/api/services', serviceRoutes);
 app.use('/api/portfolio', portfolioRoutes); 
 app.use('/api/blogs', blogRoutes); 
 app.use('/api/careers', careerRoutes); 
 app.use('/api/leads', leadRoutes); 
 app.use('/api/profile', profileRoutes); 
-app.use('/api/settings', settingsRoutes); // <-- Naya rasta register kiya
+app.use('/api/settings', settingsRoutes);
+app.use('/api', authRoutes); // <-- Login/Signup ke routes yahan se chalenge
 
 app.get('/', async (req: Request, res: Response) => {
   try {

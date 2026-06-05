@@ -1,38 +1,28 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Menu, X, Mail, Phone, Facebook, Instagram, Linkedin, Youtube, ChevronDown } from "lucide-react";
+import { 
+  Menu, X, Mail, Phone, Facebook, Instagram, Linkedin, Youtube, ChevronDown, 
+  Search, Megaphone, Share2, Monitor, Layers, FileText, MousePointerClick, Store, ShoppingCart, Smartphone 
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/config"; 
 
-const megaMenuColumns = [
+// Naya 2-Column aur 10 Services wala structure Icons ke sath
+const servicesColumns = [
   [
-    {
-      title: "Website Designing",
-      items: ["Static Website Designing", "Dynamic Website Designing", "Ecommerce Website Designing", "Custom Website Designing", "Wordpress Website Designing", "Landing Page Designing", "MLM Website Designing", "News Website Designing", "Business Website Design"]
-    }
+    { name: "SEO (Search Engine Optimization)", icon: Search },
+    { name: "SMO (Social Media Optimization)", icon: Megaphone },
+    { name: "SMM (Social Media Marketing)", icon: Share2 },
+    { name: "Website Design Services", icon: Monitor },
+    { name: "UI & UX Design Services", icon: Layers },
   ],
   [
-    {
-      title: "Website Development",
-      items: ["PHP Website Development", "Ecommerce Website Development", "Wordpress Website Development", "Custom Website Development", "MLM Software Development", "Payment Gateway Integration", "Multi Vendor Ecommerce Website", "CMS Web Development", "Web Portal Development", "CRM Software Development", "News Portal Development"]
-    }
-  ],
-  [
-    {
-      title: "Mobile App Development",
-      items: ["Android App Development", "IOS App Development", "Native App Development", "Hybrid App Development"]
-    },
-    {
-      title: "Graphic Designing",
-      items: ["Business Explainer Video", "Logo Designing", "Social Media Post Design"]
-    }
-  ],
-  [
-    {
-      title: "Digital Marketing",
-      items: ["Search Engine Optimization", "Google My Business Service", "Local SEO", "E-Commerce SEO", "Google Ads", "Google Promotion", "Online Reputation Management", "Performance Marketing", "Facebook Marketing", "Instagram Marketing", "Email Marketing", "Social Media Marketing", "Social Media Optimization", "Lead Generation"]
-    }
+    { name: "Content Marketing Services", icon: FileText },
+    { name: "Google Ads Services", icon: MousePointerClick },
+    { name: "GMB (Google My Business)", icon: Store },
+    { name: "ECommerce Web Designing", icon: ShoppingCart },
+    { name: "App Development", icon: Smartphone },
   ]
 ];
 
@@ -81,8 +71,11 @@ export function SiteHeader() {
     fetchServices();
   }, []);
 
+  // Check function to match service name with DB
   const getMatchedServiceSlug = (itemName: string) => {
-    const match = dbServices.find(s => s.title.toLowerCase().trim() === itemName.toLowerCase().trim());
+    // Basic match check ignoring brackets for better DB matching
+    const cleanItemName = itemName.split('(')[0].trim().toLowerCase();
+    const match = dbServices.find(s => s.title.toLowerCase().trim().includes(cleanItemName));
     return match ? match.slug : null;
   };
 
@@ -141,7 +134,7 @@ export function SiteHeader() {
               <Link to="/about" className="rounded-full px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary" activeProps={{ className: "rounded-full px-3 py-2 text-sm font-semibold text-primary" }}>About</Link>
             </li>
 
-            {/* RELATIVE CLASS ADD KIYA YAHAN */}
+            {/* SERVICES DROPDOWN WRAPPER */}
             <li 
               className="h-full flex items-center relative"
               onMouseEnter={() => setIsMegaMenuHovered(true)}
@@ -151,7 +144,7 @@ export function SiteHeader() {
                 Our Services <ChevronDown className={`size-4 transition-transform duration-300 ${isMegaMenuHovered ? 'rotate-180' : ''}`} />
               </div>
 
-              {/* COMPACT FLOATING MEGA MENU */}
+              {/* NEW COMPACT 2-COLUMN MEGA MENU */}
               <AnimatePresence>
                 {isMegaMenuHovered && (
                   <motion.div
@@ -159,40 +152,48 @@ export function SiteHeader() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.2 }}
-                    // YE HAI MAGIC LINE: Fix width (850px), centered, heavy shadow
-                    className="absolute left-1/2 -translate-x-[45%] top-full w-[850px] bg-white border border-border shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] rounded-xl overflow-hidden z-50"
+                    className="absolute left-1/2 -translate-x-1/2 top-full w-[700px] bg-white border border-border shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] rounded-xl overflow-hidden z-50"
                   >
-                    <div className="p-6">
-                      <div className="grid grid-cols-4 gap-6">
-                        {megaMenuColumns.map((col, colIdx) => (
-                          <div key={colIdx} className="space-y-4">
-                            {col.map((category, catIdx) => (
-                              <div key={catIdx}>
-                                <h3 className="text-[13px] font-bold text-primary mb-2 pb-1 border-b border-primary/10 inline-block">
-                                  {category.title}
-                                </h3>
-                                <ul className="space-y-1.5">
-                                  {category.items.map((item, itemIdx) => {
-                                    const slug = getMatchedServiceSlug(item);
-                                    return (
-                                      <li key={itemIdx}>
-                                        {slug ? (
-                                          <Link to="/service/$slug" params={{ slug }} className="text-[12px] font-medium text-navy/80 hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                            <span className="w-1 h-1 rounded-full bg-primary/40 group-hover:bg-primary transition-colors" />
-                                            {item}
-                                          </Link>
-                                        ) : (
-                                          <button onClick={handleNotAvailable} className="text-[12px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors flex items-center gap-1.5 text-left cursor-not-allowed">
-                                            <span className="w-1 h-1 rounded-full bg-muted-foreground/20" />
-                                            {item}
-                                          </button>
-                                        )}
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                            ))}
+                    <div className="p-8">
+                      <div className="grid grid-cols-2 gap-x-12">
+                        {servicesColumns.map((column, colIdx) => (
+                          <div key={colIdx} className="flex flex-col">
+                            {column.map((service, itemIdx) => {
+                              const slug = getMatchedServiceSlug(service.name);
+                              const isLast = itemIdx === column.length - 1;
+                              const Icon = service.icon;
+
+                              return (
+                                <div key={itemIdx} className={`py-4 ${!isLast ? 'border-b border-border/60' : ''}`}>
+                                  {slug ? (
+                                    <Link 
+                                      to="/service/$slug" 
+                                      params={{ slug }} 
+                                      className="group flex items-center gap-4 w-full text-left"
+                                    >
+                                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/5 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                                        <Icon className="h-5 w-5" />
+                                      </div>
+                                      <span className="text-[13px] font-bold text-navy group-hover:text-primary transition-colors">
+                                        {service.name}
+                                      </span>
+                                    </Link>
+                                  ) : (
+                                    <button 
+                                      onClick={handleNotAvailable} 
+                                      className="group flex items-center gap-4 w-full text-left cursor-not-allowed opacity-60 hover:opacity-80 transition-opacity"
+                                    >
+                                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                                        <Icon className="h-5 w-5" />
+                                      </div>
+                                      <span className="text-[13px] font-bold text-muted-foreground">
+                                        {service.name}
+                                      </span>
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ))}
                       </div>
@@ -243,30 +244,27 @@ export function SiteHeader() {
                   <AnimatePresence>
                     {servicesOpen && (
                       <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden bg-muted/30 rounded-lg mx-2 mb-2">
-                        <div className="p-4 space-y-6">
-                          {megaMenuColumns.flat().map((category, catIdx) => (
-                            <div key={catIdx}>
-                              <h3 className="font-bold text-primary mb-2 text-sm">{category.title}</h3>
-                              <ul className="space-y-3 pl-2">
-                                {category.items.map((item, itemIdx) => {
-                                  const slug = getMatchedServiceSlug(item);
-                                  return (
-                                    <li key={itemIdx}>
-                                      {slug ? (
-                                        <Link to="/service/$slug" params={{ slug }} className="text-sm font-medium text-navy/80 hover:text-primary block">
-                                          {item}
-                                        </Link>
-                                      ) : (
-                                        <button onClick={handleAdminNotAvailable} className="text-sm font-medium text-muted-foreground/60 text-left w-full block">
-                                          {item} <span className="text-[10px] ml-1 opacity-50">(Soon)</span>
-                                        </button>
-                                      )}
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          ))}
+                        <div className="p-2 space-y-1">
+                          {/* Mobile ke liye dono columns ko ek sath render karenge */}
+                          {servicesColumns.flat().map((service, itemIdx) => {
+                            const slug = getMatchedServiceSlug(service.name);
+                            const Icon = service.icon;
+                            return (
+                              <div key={itemIdx}>
+                                {slug ? (
+                                  <Link to="/service/$slug" params={{ slug }} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-navy/80 hover:bg-white hover:text-primary transition-colors">
+                                    <Icon className="h-4 w-4 text-primary" />
+                                    {service.name}
+                                  </Link>
+                                ) : (
+                                  <button onClick={handleAdminNotAvailable} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground/60 text-left hover:bg-white transition-colors">
+                                    <Icon className="h-4 w-4" />
+                                    {service.name} <span className="text-[9px] ml-auto opacity-50 bg-muted px-1.5 py-0.5 rounded uppercase tracking-wider">Soon</span>
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}

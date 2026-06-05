@@ -1,11 +1,12 @@
 import express from 'express';
 import { createService, getServices, updateService, deleteService } from '../controllers/serviceController'; 
+import { verifyToken } from '../middlewares/authMiddleware'; 
 
 const router = express.Router();
 
-router.get('/', getServices);
-router.post('/', createService);
-router.put('/:id', updateService); // <-- Edit karne ka route
-router.delete('/:id', deleteService); // <-- Delete karne ka route
+router.get('/', getServices); // Main website ke liye public
+router.post('/', verifyToken, createService);
+router.put('/:id', verifyToken, updateService); 
+router.delete('/:id', verifyToken, deleteService); 
 
 export default router;
