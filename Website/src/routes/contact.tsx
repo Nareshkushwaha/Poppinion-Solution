@@ -130,9 +130,9 @@ function ContactPage() {
           {/* CONTACT INFO */}
           <div className="space-y-4">
             {[
-              { Icon: Phone, title: "Call Us", value: "+91 99999 99999" },
-              { Icon: Mail, title: "Email Us", value: "hello@poppinion.com" },
-              { Icon: MapPin, title: "Visit Us", value: "New Delhi, India" },
+              { Icon: Phone, title: "Call Us", value: "+919654786026" },
+              { Icon: Mail, title: "Email Us", value: "popinionsolutions@gmail.com" },
+              { Icon: MapPin, title: "Visit Us", value: "Jaipur Rajasthan, India" },
             ].map((c) => (
               <div key={c.title} className="flex items-center gap-4 rounded-2xl border border-border bg-white p-5 shadow-soft transition hover:shadow-md hover:border-primary/40">
                 <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary"><c.Icon className="h-5 w-5" /></div>

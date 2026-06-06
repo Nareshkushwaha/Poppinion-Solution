@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/config";
-import { useAuth } from "@/lib/auth-store"; // <-- Naya import
+import { useAuth } from "@/lib/auth-store"; 
 
 export const Route = createFileRoute("/admin/profile")({
   head: () => ({ meta: [{ title: "Profile — Poppinion Admin" }] }),
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin/profile")({
 });
 
 function ProfilePage() {
-  const { userEmail } = useAuth(); // Jo admin login hai uska email nikal liya
+  const { userEmail, token } = useAuth(); // Token bhi nikala
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   
@@ -31,16 +31,26 @@ function ProfilePage() {
     photo: ""
   });
 
-  // 1. DATABASE SE DATA MANGWANA (Sirf isi user ka)
+  // 1. DATABASE SE DATA MANGWANA (Token de kar)
   const fetchProfile = async () => {
-    if (!userEmail) return;
+    if (!token) {
+        setFetching(false);
+        return;
+    }
+    
     try {
-      const res = await fetch(`${API_BASE_URL}/profile/${userEmail}`);
+      const res = await fetch(`${API_BASE_URL}/admin/profile`, {
+          headers: {
+            // NAYA: Token bhej rahe hain taaki backend ko pata chale kaun hai
+            'Authorization': `Bearer ${token}` 
+          }
+      });
       const data = await res.json();
+      
       if (data.success && data.data) {
         setV({
           name: data.data.name || "",
-          email: data.data.email || userEmail,
+          email: data.data.email || userEmail, // Login wala email dikhayenge
           phone: data.data.phone || "",
           designation: data.data.designation || "",
           bio: data.data.bio || "",
@@ -56,17 +66,25 @@ function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
-  }, [userEmail]);
+  }, [token]); // Token aane pe update
 
   // 2. CHANGES KO DATABASE MEIN SAVE KARNA
   const save = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/profile/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // originalEmail bhej rahe hain taaki backend ko pata chale kiska data update karna hai
-        body: JSON.stringify({ ...v, originalEmail: userEmail }) 
+      const response = await fetch(`${API_BASE_URL}/admin/profile`, {
+        method: 'PUT',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Token zaroori hai update karne ke liye
+        },
+        body: JSON.stringify({
+            name: v.name,
+            phone: v.phone,
+            designation: v.designation,
+            bio: v.bio,
+            photo: v.photo
+        }) 
       });
       const data = await response.json();
       
@@ -104,7 +122,6 @@ function ProfilePage() {
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
-            {/* Email ko disabled rakha hai taaki login ID kharab na ho */}
             <Input value={v.email} disabled className="bg-muted cursor-not-allowed" title="Email cannot be changed" />
           </div>
           <div className="space-y-2">

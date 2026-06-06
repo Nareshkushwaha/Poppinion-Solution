@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload, MultiImageUpload } from "@/components/admin/ImageUpload";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/admin/RichTextEditor"; 
+import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye
 
 export const Route = createFileRoute("/admin/portfolio")({
   head: () => ({ meta: [{ title: "Portfolio — Poppinion Admin" }] }),
@@ -31,10 +32,12 @@ function PortfolioPage() {
   const [preview, setPreview] = useState<Project | null>(null); 
   
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
+  
+  const { token } = useAuth(); // NAYA: Store se token nikala
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/portfolio');
+      const res = await fetch('http://localhost:5000/api/portfolio'); // Public API
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -60,6 +63,11 @@ function PortfolioPage() {
   };
 
   const handleSaveToDatabase = async (projectData: Project) => {
+    if (!token) {
+        toast.error("Bhai pehle login toh karo!");
+        return;
+    }
+
     try {
       const isExistingProject = dbProjects.some(p => p.id === projectData.id);
       
@@ -71,7 +79,10 @@ function PortfolioPage() {
 
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi (Token) di
+        },
         body: JSON.stringify({
           name: projectData.name,
           slug: projectData.slug,
@@ -119,19 +130,22 @@ function PortfolioPage() {
       await handleSaveToDatabase(duplicatedProject);
   };
 
-  // DELETE PROJECT FUNCTION (NAYA)
   const handleDelete = async (id: string) => {
+    if (!token) return toast.error("Please login!");
     if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
       const response = await fetch(`http://localhost:5000/api/portfolio/${id}`, {
         method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+        }
       });
       const data = await response.json();
       
       if (data.success) {
         toast.success("Project delete ho gaya! 🗑️");
-        fetchProjects(); // List ko refresh karo taaki card gayab ho jaye
+        fetchProjects(); 
       } else {
         toast.error("Error: " + data.message);
       }
@@ -171,8 +185,6 @@ function PortfolioPage() {
                 <Button size="sm" variant="outline" onClick={() => setEditing(p)}><Pencil className="size-3.5 mr-1" /> Edit</Button>
                 <Button size="sm" variant="outline" onClick={() => handleDuplicate(p)}><Copy className="size-3.5 mr-1" /> Duplicate</Button>
                 <Button size="sm" variant="outline" onClick={() => setPreview(p)}><Eye className="size-3.5 mr-1" /> Preview</Button>
-                
-                {/* Delete button ko update kiya gaya hai */}
                 <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="size-3.5" /></Button>
               </div>
             </div>

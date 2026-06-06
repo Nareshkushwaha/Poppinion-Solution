@@ -7,9 +7,11 @@ import portfolioRoutes from './routes/portfolioRoutes';
 import blogRoutes from './routes/blogRoutes';
 import careerRoutes from './routes/careerRoutes'; 
 import leadRoutes from './routes/leadRoutes'; 
-import profileRoutes from './routes/profileRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import authRoutes from './routes/authRoutes';
+// NAYA: adminRoutes import karo
+import adminRoutes from './routes/adminRoutes'; 
+
 dotenv.config();
 
 const app = express();
@@ -26,9 +28,10 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/blogs', blogRoutes); 
 app.use('/api/careers', careerRoutes); 
 app.use('/api/leads', leadRoutes); 
-app.use('/api/profile', profileRoutes); 
+// NAYA: adminRoutes add kar diya
+app.use('/api/admin', adminRoutes); 
 app.use('/api/settings', settingsRoutes);
-app.use('/api', authRoutes); // <-- Login/Signup ke routes yahan se chalenge
+app.use('/api', authRoutes); 
 
 app.get('/', async (req: Request, res: Response) => {
   try {

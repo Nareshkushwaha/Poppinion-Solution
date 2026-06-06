@@ -15,7 +15,8 @@ import { ImageUpload, MultiImageUpload } from "@/components/admin/ImageUpload";
 import { RichTextEditor } from "@/components/admin/RichTextEditor"; 
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { API_BASE_URL } from "@/config"; // Yahan se URL aayega
+import { API_BASE_URL } from "@/config";
+import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye
 
 export const Route = createFileRoute("/admin/services")({
   head: () => ({ meta: [{ title: "Services — Poppinion Admin" }] }),
@@ -32,12 +33,13 @@ function ServicesPage() {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Service | null>(null);
   const [preview, setPreview] = useState<Service | null>(null);
-  
   const [dbServices, setDbServices] = useState<Service[]>([]);
+  
+  const { token } = useAuth(); // NAYA: Token nikala
 
   const fetchServices = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/services`);
+      const res = await fetch(`${API_BASE_URL}/services`); // Public hai, token nahi chahiye
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -61,33 +63,23 @@ function ServicesPage() {
   const filtered = dbServices.filter(s => s.title.toLowerCase().includes(query.toLowerCase()));
 
   const handleSaveToDatabase = async (serviceData: Service) => {
+    if (!token) {
+        toast.error("Please login to save!");
+        return;
+    }
+    
     try {
       const isExistingService = dbServices.some(s => s.id === serviceData.id);
-      
-      const url = isExistingService 
-        ? `${API_BASE_URL}/services/${serviceData.id}` 
-        : `${API_BASE_URL}/services`;
-      
+      const url = isExistingService ? `${API_BASE_URL}/services/${serviceData.id}` : `${API_BASE_URL}/services`;
       const method = isExistingService ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: serviceData.title,
-          slug: serviceData.slug,
-          shortDescription: serviceData.shortDescription,
-          fullDescription: serviceData.fullDescription,
-          featuredImage: serviceData.featuredImage,
-          galleryImages: serviceData.galleryImages,
-          benefits: serviceData.benefits,
-          features: serviceData.features,
-          faq: serviceData.faq,
-          seoTitle: serviceData.seoTitle,
-          seoDescription: serviceData.seoDescription,
-          seoKeywords: serviceData.seoKeywords,
-          status: serviceData.status
-        })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+        },
+        body: JSON.stringify(serviceData) // Direct bhej sakte ho agar format theek hai
       });
 
       const data = await response.json();
@@ -115,16 +107,19 @@ function ServicesPage() {
           status: "draft" as "draft", 
           createdAt: nowIso()
       };
-      
       await handleSaveToDatabase(duplicatedService);
   };
 
   const handleDelete = async (id: string) => {
+    if (!token) return toast.error("Please login!");
     if (!confirm("Are you sure you want to delete this service?")) return;
 
     try {
       const response = await fetch(`${API_BASE_URL}/services/${id}`, {
         method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+        }
       });
       const data = await response.json();
       
@@ -140,6 +135,7 @@ function ServicesPage() {
     }
   };
 
+// ... BAAKI KA CODE WAHI RAHEGA (Render function wagera)
   return (
     <div>
       <PageHeader
@@ -193,6 +189,7 @@ function ServicesPage() {
   );
 }
 
+// ... FaqEditor, ListEditor aur baaki component aise hi rahenge jo tumne diye hain ...
 function ServiceForm({ value, onClose, onSave }: { value: Service; onClose: () => void; onSave: (s: Service) => void }) {
   const [v, setV] = useState(value);
   const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

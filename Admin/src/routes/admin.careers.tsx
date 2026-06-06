@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { ListEditor } from "./admin.services";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye import kiya
 
 export const Route = createFileRoute("/admin/careers")({
   head: () => ({ meta: [{ title: "Careers — Poppinion Admin" }] }),
@@ -33,10 +34,12 @@ function CareersPage() {
   const [preview, setPreview] = useState<Job | null>(null);
   const [dbJobs, setDbJobs] = useState<Job[]>([]);
 
+  const { token } = useAuth(); // NAYA: Store se token nikala
+
   // FETCH JOBS FROM DATABASE
   const fetchJobs = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/careers');
+      const res = await fetch('http://localhost:5000/api/careers'); // Public route, no token needed
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -58,6 +61,11 @@ function CareersPage() {
 
   // SAVE OR UPDATE JOB IN DATABASE
   const handleSaveToDatabase = async (jobData: Job) => {
+    if (!token) {
+        toast.error("Bhai pehle login toh karo!");
+        return;
+    }
+
     try {
       const isExisting = dbJobs.some(j => j.id === jobData.id);
       const url = isExisting ? `http://localhost:5000/api/careers/${jobData.id}` : 'http://localhost:5000/api/careers';
@@ -65,7 +73,10 @@ function CareersPage() {
 
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // NAYA: Backend ko token (chaabi) diya
+        },
         body: JSON.stringify(jobData)
       });
 
@@ -85,9 +96,16 @@ function CareersPage() {
 
   // DELETE JOB FUNCTION
   const handleDelete = async (id: string) => {
+    if (!token) return toast.error("Please login!");
     if (!confirm("Are you sure you want to delete this job posting?")) return;
+    
     try {
-      const response = await fetch(`http://localhost:5000/api/careers/${id}`, { method: 'DELETE' });
+      const response = await fetch(`http://localhost:5000/api/careers/${id}`, { 
+          method: 'DELETE',
+          headers: {
+              'Authorization': `Bearer ${token}` // NAYA: Backend ko token (chaabi) diya
+          }
+      });
       const data = await response.json();
       if (data.success) {
         toast.success("Job delete ho gayi! 🗑️");
