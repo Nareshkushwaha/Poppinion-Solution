@@ -1,11 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
     try {
-      // API_BASE_URL ki jagah direct url lagaya hai safety ke liye
-      const res = await fetch(`http://localhost:5000/api/blogs`);
+      const res = await fetch(`${API_BASE_URL}/blogs`);
       const data = await res.json();
       
       if (data.success) {

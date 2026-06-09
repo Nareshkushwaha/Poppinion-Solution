@@ -14,7 +14,8 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { ListEditor } from "./admin.services";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-store"; // Token yahan se direct nikalenge
+import { useAuth } from "@/lib/auth-store";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/admin/blog")({
   head: () => ({ meta: [{ title: "Blog — Poppinion Admin" }] }),
@@ -40,9 +41,9 @@ function BlogPage() {
     if (!token) return; // Agar token nahi hai toh api call mat karo
 
     try {
-      const res = await fetch('http://localhost:5000/api/blogs', {
+      const res = await fetch(`${API_BASE_URL}/blogs`, {
         headers: {
-          'Authorization': `Bearer ${token}` // Backend ko token diya
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await res.json();
@@ -66,7 +67,7 @@ function BlogPage() {
     if (!token) return;
     try {
       const isExisting = dbBlogs.some(b => b.id === blogData.id);
-      const url = isExisting ? `http://localhost:5000/api/blogs/${blogData.id}` : 'http://localhost:5000/api/blogs';
+      const url = isExisting ? `${API_BASE_URL}/blogs/${blogData.id}` : `${API_BASE_URL}/blogs`;
       const method = isExisting ? 'PUT' : 'POST';
 
       const finalStatus = isDraft ? "draft" : blogData.status;
@@ -108,7 +109,7 @@ function BlogPage() {
   const handleDelete = async (id: string) => {
     if (!token || !confirm("Are you sure you want to delete this blog post?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/blogs/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/blogs/${id}`, { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

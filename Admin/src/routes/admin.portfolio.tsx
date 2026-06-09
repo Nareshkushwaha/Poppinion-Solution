@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload, MultiImageUpload } from "@/components/admin/ImageUpload";
 import { toast } from "sonner";
 import { RichTextEditor } from "@/components/admin/RichTextEditor"; 
-import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye
+import { useAuth } from "@/lib/auth-store";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/admin/portfolio")({
   head: () => ({ meta: [{ title: "Portfolio — Poppinion Admin" }] }),
@@ -37,7 +38,7 @@ function PortfolioPage() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/portfolio'); // Public API
+      const res = await fetch(`${API_BASE_URL}/portfolio`);
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -72,8 +73,8 @@ function PortfolioPage() {
       const isExistingProject = dbProjects.some(p => p.id === projectData.id);
       
       const url = isExistingProject 
-        ? `http://localhost:5000/api/portfolio/${projectData.id}` 
-        : 'http://localhost:5000/api/portfolio';
+        ? `${API_BASE_URL}/portfolio/${projectData.id}` 
+        : `${API_BASE_URL}/portfolio`;
       
       const method = isExistingProject ? 'PUT' : 'POST';
 
@@ -135,10 +136,10 @@ function PortfolioPage() {
     if (!confirm("Are you sure you want to delete this project?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/portfolio/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/portfolio/${id}`, {
         method: 'DELETE',
         headers: {
-            'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+            'Authorization': `Bearer ${token}`
         }
       });
       const data = await response.json();

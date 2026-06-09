@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Briefcase, Image, FileText, Users, Inbox, ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Dashboard — Poppinion Admin" }] }),
@@ -43,11 +44,11 @@ function Dashboard() {
 
       // 3. Sabko alag-alag safely fetch karo
       const [servicesData, portfolioData, blogsData, careersData, leadsData] = await Promise.all([
-        safeFetch('http://localhost:5000/api/services', 'Services'),
-        safeFetch('http://localhost:5000/api/portfolio', 'Portfolio'),
-        safeFetch('http://localhost:5000/api/blogs', 'Blogs'),
-        safeFetch('http://localhost:5000/api/careers', 'Careers'),
-        safeFetch('http://localhost:5000/api/leads', 'Leads')
+        safeFetch(`${API_BASE_URL}/services`, 'Services'),
+        safeFetch(`${API_BASE_URL}/portfolio`, 'Portfolio'),
+        safeFetch(`${API_BASE_URL}/blogs`, 'Blogs'),
+        safeFetch(`${API_BASE_URL}/careers`, 'Careers'),
+        safeFetch(`${API_BASE_URL}/leads`, 'Leads')
       ]);
 
       // 4. Data set karo (Jo API chalegi, uska data dikhega)

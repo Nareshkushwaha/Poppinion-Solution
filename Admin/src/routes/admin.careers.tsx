@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { ListEditor } from "./admin.services";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye import kiya
+import { useAuth } from "@/lib/auth-store";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/admin/careers")({
   head: () => ({ meta: [{ title: "Careers — Poppinion Admin" }] }),
@@ -39,7 +40,7 @@ function CareersPage() {
   // FETCH JOBS FROM DATABASE
   const fetchJobs = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/careers'); // Public route, no token needed
+      const res = await fetch(`${API_BASE_URL}/careers`);
       const data = await res.json();
       if (data.success) {
         const formattedData = data.data.map((item: any) => ({
@@ -68,14 +69,14 @@ function CareersPage() {
 
     try {
       const isExisting = dbJobs.some(j => j.id === jobData.id);
-      const url = isExisting ? `http://localhost:5000/api/careers/${jobData.id}` : 'http://localhost:5000/api/careers';
+      const url = isExisting ? `${API_BASE_URL}/careers/${jobData.id}` : `${API_BASE_URL}/careers`;
       const method = isExisting ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method: method,
         headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // NAYA: Backend ko token (chaabi) diya
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(jobData)
       });
@@ -100,10 +101,10 @@ function CareersPage() {
     if (!confirm("Are you sure you want to delete this job posting?")) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/careers/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/careers/${id}`, { 
           method: 'DELETE',
           headers: {
-              'Authorization': `Bearer ${token}` // NAYA: Backend ko token (chaabi) diya
+              'Authorization': `Bearer ${token}`
           }
       });
       const data = await response.json();

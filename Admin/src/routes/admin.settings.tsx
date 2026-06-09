@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/config";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({ meta: [{ title: "Website Settings — Poppinion Admin" }] }),
@@ -23,7 +24,7 @@ function SettingsPage() {
   // FETCH SETTINGS FROM DATABASE
   const fetchSettings = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/settings');
+      const res = await fetch(`${API_BASE_URL}/settings`);
       const data = await res.json();
       if (data.success && data.data) {
         setSiteName(data.data.siteName || "");
@@ -43,7 +44,7 @@ function SettingsPage() {
   // SAVE SETTINGS TO DATABASE
   const save = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/settings', {
+      const response = await fetch(`${API_BASE_URL}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

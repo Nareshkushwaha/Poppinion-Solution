@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-store"; // NAYA: Token laane ke liye
+import { useAuth } from "@/lib/auth-store";
+import { API_BASE_URL } from "@/config";
 
 export interface DBLead {
   id: string;
@@ -41,9 +42,9 @@ function LeadsPage() {
   const fetchLeads = async () => {
     if (!token) return; // Agar token nahi hai toh API call mat karo
     try {
-      const res = await fetch('http://localhost:5000/api/leads', {
+      const res = await fetch(`${API_BASE_URL}/leads`, {
         headers: {
-          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await res.json();
@@ -69,11 +70,11 @@ function LeadsPage() {
   const updateStatus = async (id: string, newStatus: string) => {
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/leads/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/leads/${id}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status: newStatus })
       });
@@ -93,10 +94,10 @@ function LeadsPage() {
   const handleDelete = async (id: string) => {
     if (!token || !confirm("Delete this lead?")) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/leads/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/leads/${id}`, { 
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}` // NAYA: Backend ko chaabi di
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await response.json();
